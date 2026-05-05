@@ -13,6 +13,49 @@ function err(e: unknown): ToolResult {
   };
 }
 
+const DEFAULT_EVENT_FIELDS = [
+  "event_name",
+  "event_datetime",
+  "event_json",
+  "appmetrica_device_id",
+  "app_version_name",
+  "os_version",
+  "device_model",
+  "country_iso_code",
+  "city",
+].join(",");
+
+const DEFAULT_CRASH_FIELDS = [
+  "crash_name",
+  "crash_datetime",
+  "crash_receive_datetime",
+  "appmetrica_device_id",
+  "app_version_name",
+  "os_version",
+  "device_model",
+  "country_iso_code",
+].join(",");
+
+const DEFAULT_INSTALLATION_FIELDS = [
+  "installation_id",
+  "install_datetime",
+  "appmetrica_device_id",
+  "app_version_name",
+  "os_version",
+  "device_model",
+  "country_iso_code",
+  "city",
+].join(",");
+
+// AppMetrica Logs API requires datetime format: "YYYY-MM-DD HH:MM:SS"
+function toDatetime(date: string): string {
+  return date.includes(" ") || date.includes("T") ? date : `${date} 00:00:00`;
+}
+
+function toDatetimeEnd(date: string): string {
+  return date.includes(" ") || date.includes("T") ? date : `${date} 23:59:59`;
+}
+
 async function exportLogs(
   client: AppMetricaClient,
   type: string,
@@ -34,35 +77,43 @@ async function exportLogs(
 export function registerLogTools(server: ServerAdapter, client: AppMetricaClient): void {
   server.tool(
     "export_events",
-    "Export raw event logs from AppMetrica for a given application and time range. Optionally filter by event name.",
+    `Export raw event logs from AppMetrica Logs API.
+Revenue and in-app purchase data is stored in the event_json field as structured JSON.
+Default fields: event_name, event_datetime, event_json, appmetrica_device_id, app_version_name, os_version, device_model, country_iso_code, city.
+To get subscription/purchase data: filter by event_name (e.g. "subscription_purchase") and parse event_json field.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
-      date_from: z.string().describe("Start date in YYYY-MM-DD format"),
-      date_to: z.string().describe("End date in YYYY-MM-DD format"),
-      event_name: z.string().optional().describe("Filter by specific event name"),
-      limit: z.number().optional().default(1000).describe("Maximum number of events to return"),
+      date_from: z.string().describe("Start date YYYY-MM-DD"),
+      date_to: z.string().describe("End date YYYY-MM-DD"),
+      event_name: z.string().optional().describe("Filter by specific event name (e.g. subscription_purchase)"),
+      fields: z.string().optional().describe(
+        "Comma-separated fields to return. Defaults: event_name,event_datetime,event_json,appmetrica_device_id,app_version_name,os_version,device_model,country_iso_code,city"
+      ),
+      limit: z.number().optional().default(1000).describe("Maximum number of events to return (default 1000)"),
     },
     async (args) => {
       try {
-        const { app_id, date_from, date_to, event_name, limit } = args as {
+        const { app_id, date_from, date_to, event_name, fields, limit } = args as {
           app_id: number;
           date_from: string;
           date_to: string;
           event_name?: string;
+          fields?: string;
           limit: number;
         };
 
         const params: Record<string, string | number> = {
           application_id: app_id,
-          date_since: date_from,
-          date_until: date_to,
+          date_since: toDatetime(date_from),
+          date_until: toDatetimeEnd(date_to),
+          fields: fields ?? DEFAULT_EVENT_FIELDS,
           limit: limit ?? 1000,
         };
 
         if (event_name) params.event_name = event_name;
 
         const rows = await exportLogs(client, "events", params);
-        return ok(rows);
+        return ok({ count: rows.length, events: rows });
       } catch (e) {
         return err(e);
       }
@@ -74,28 +125,33 @@ export function registerLogTools(server: ServerAdapter, client: AppMetricaClient
     "Export raw crash logs from AppMetrica for a given application and time range.",
     {
       app_id: z.number().describe("AppMetrica application ID"),
-      date_from: z.string().describe("Start date in YYYY-MM-DD format"),
-      date_to: z.string().describe("End date in YYYY-MM-DD format"),
+      date_from: z.string().describe("Start date YYYY-MM-DD"),
+      date_to: z.string().describe("End date YYYY-MM-DD"),
+      fields: z.string().optional().describe(
+        "Comma-separated fields to return. Defaults: crash_name,crash_datetime,crash_receive_datetime,appmetrica_device_id,app_version_name,os_version,device_model,country_iso_code"
+      ),
       limit: z.number().optional().default(1000).describe("Maximum number of crash records to return"),
     },
     async (args) => {
       try {
-        const { app_id, date_from, date_to, limit } = args as {
+        const { app_id, date_from, date_to, fields, limit } = args as {
           app_id: number;
           date_from: string;
           date_to: string;
+          fields?: string;
           limit: number;
         };
 
         const params: Record<string, string | number> = {
           application_id: app_id,
-          date_since: date_from,
-          date_until: date_to,
+          date_since: toDatetime(date_from),
+          date_until: toDatetimeEnd(date_to),
+          fields: fields ?? DEFAULT_CRASH_FIELDS,
           limit: limit ?? 1000,
         };
 
         const rows = await exportLogs(client, "crashes", params);
-        return ok(rows);
+        return ok({ count: rows.length, crashes: rows });
       } catch (e) {
         return err(e);
       }
@@ -107,28 +163,33 @@ export function registerLogTools(server: ServerAdapter, client: AppMetricaClient
     "Export raw installation logs from AppMetrica for a given application and time range.",
     {
       app_id: z.number().describe("AppMetrica application ID"),
-      date_from: z.string().describe("Start date in YYYY-MM-DD format"),
-      date_to: z.string().describe("End date in YYYY-MM-DD format"),
+      date_from: z.string().describe("Start date YYYY-MM-DD"),
+      date_to: z.string().describe("End date YYYY-MM-DD"),
+      fields: z.string().optional().describe(
+        "Comma-separated fields to return. Defaults: installation_id,install_datetime,appmetrica_device_id,app_version_name,os_version,device_model,country_iso_code,city"
+      ),
       limit: z.number().optional().default(1000).describe("Maximum number of installation records to return"),
     },
     async (args) => {
       try {
-        const { app_id, date_from, date_to, limit } = args as {
+        const { app_id, date_from, date_to, fields, limit } = args as {
           app_id: number;
           date_from: string;
           date_to: string;
+          fields?: string;
           limit: number;
         };
 
         const params: Record<string, string | number> = {
           application_id: app_id,
-          date_since: date_from,
-          date_until: date_to,
+          date_since: toDatetime(date_from),
+          date_until: toDatetimeEnd(date_to),
+          fields: fields ?? DEFAULT_INSTALLATION_FIELDS,
           limit: limit ?? 1000,
         };
 
         const rows = await exportLogs(client, "installations", params);
-        return ok(rows);
+        return ok({ count: rows.length, installations: rows });
       } catch (e) {
         return err(e);
       }

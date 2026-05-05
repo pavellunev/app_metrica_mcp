@@ -31,6 +31,8 @@ export class AppMetricaClient {
   private async request<T>(method: string, url: string, body?: unknown): Promise<T> {
     const delays = [1000, 2000, 4000];
     let lastError: Error | null = null;
+    let queuePolls = 0;
+    const maxQueuePolls = 20; // up to 60s total for Logs API queue
 
     for (let attempt = 0; attempt <= 3; attempt++) {
       logger.info({ method, url, attempt }, "AppMetrica request");
@@ -52,6 +54,18 @@ export class AppMetricaClient {
 
         if (response.status === 401) {
           throw new Error("Invalid OAuth token");
+        }
+
+        // Logs API: 202 means data is being prepared — poll until ready (up to 60s)
+        if (response.status === 202) {
+          queuePolls++;
+          if (queuePolls >= maxQueuePolls) {
+            throw new Error("AppMetrica Logs API: data not ready after 60s, try again later");
+          }
+          logger.info({ url, queuePolls }, "AppMetrica queue: data not ready, retrying in 3s");
+          await sleep(3000);
+          attempt--; // don't consume a retry slot for queue polling
+          continue;
         }
 
         if (response.status === 429 || response.status >= 500) {
