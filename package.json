@@ -1,13 +1,38 @@
 {
   "name": "appmetrica-mcp",
   "version": "0.1.0",
+  "description": "MCP server for AppMetrica — Yandex mobile analytics platform",
   "type": "module",
   "main": "dist/index.js",
   "bin": { "appmetrica-mcp": "dist/index.js" },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "node --experimental-strip-types src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "appmetrica",
+    "yandex",
+    "analytics",
+    "claude",
+    "model-context-protocol"
+  ],
+  "author": "Pavel Lunev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pavellunev99/app_metrica_mcp.git"
+  },
+  "homepage": "https://github.com/pavellunev99/app_metrica_mcp#readme",
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

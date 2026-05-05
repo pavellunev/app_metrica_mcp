@@ -1,5 +1,8 @@
 # appmetrica-mcp
 
+[![npm version](https://img.shields.io/npm/v/appmetrica-mcp)](https://www.npmjs.com/package/appmetrica-mcp)
+[![license](https://img.shields.io/npm/l/appmetrica-mcp)](LICENSE)
+
 MCP server for [AppMetrica](https://appmetrica.yandex.com) — Yandex's mobile analytics platform. Gives Claude direct access to your app's analytics: reports, raw event logs, crash data, and push notification campaigns.
 
 ## Features
@@ -18,7 +21,7 @@ MCP server for [AppMetrica](https://appmetrica.yandex.com) — Yandex's mobile a
 
 ## Getting an OAuth Token
 
-AppMetrica uses Yandex OAuth. The easiest way is via the **Russian OAuth portal** (`oauth.yandex.ru`) — the international version (`oauth.yandex.com`) does not expose AppMetrica scopes in its UI.
+AppMetrica uses Yandex OAuth. Use the **Russian OAuth portal** (`oauth.yandex.ru`) — the international version (`oauth.yandex.com`) does not expose AppMetrica scopes in its UI.
 
 ### Step 1 — Create an OAuth app
 
@@ -52,7 +55,7 @@ Log in → authorize the app → copy the `access_token` value from the redirect
 ```bash
 claude mcp add appmetrica \
   -e APPMETRICA_OAUTH_TOKEN=your_token \
-  -- node /path/to/appmetrica-mcp/dist/index.js
+  -- npx -y appmetrica-mcp
 ```
 
 To enable write operations (push campaign creation):
@@ -61,7 +64,7 @@ To enable write operations (push campaign creation):
 claude mcp add appmetrica \
   -e APPMETRICA_OAUTH_TOKEN=your_token \
   -e APPMETRICA_ALLOW_WRITE=true \
-  -- node /path/to/appmetrica-mcp/dist/index.js
+  -- npx -y appmetrica-mcp
 ```
 
 ### Claude Desktop
@@ -72,8 +75,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "appmetrica": {
-      "command": "node",
-      "args": ["/path/to/appmetrica-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "appmetrica-mcp"],
       "env": {
         "APPMETRICA_OAUTH_TOKEN": "your_token"
       }
@@ -85,8 +88,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ### Building from source
 
 ```bash
-git clone https://github.com/yourname/appmetrica-mcp
-cd appmetrica-mcp
+git clone https://github.com/pavellunev99/app_metrica_mcp
+cd app_metrica_mcp
 npm install
 npm run build
 ```
