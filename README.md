@@ -3,6 +3,8 @@
 [![npm version](https://img.shields.io/npm/v/appmetrica-mcp)](https://www.npmjs.com/package/appmetrica-mcp)
 [![license](https://img.shields.io/npm/l/appmetrica-mcp)](LICENSE)
 
+![AppMetrica MCP](assets/preview.png)
+
 MCP server for [AppMetrica](https://appmetrica.yandex.com) — Yandex's mobile analytics platform. Gives Claude direct access to your app's analytics: reports, raw event logs, crash data, and push notification campaigns.
 
 ## Features
