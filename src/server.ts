@@ -21,7 +21,7 @@ export type ServerAdapter = {
 export function createServer(config: Config): McpServer {
   const server = new McpServer({
     name: "appmetrica-mcp",
-    version: "0.1.0",
+    version: "0.1.2",
   });
 
   const client = new AppMetricaClient(config);

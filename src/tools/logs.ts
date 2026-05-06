@@ -80,7 +80,11 @@ export function registerLogTools(server: ServerAdapter, client: AppMetricaClient
     `Export raw event logs from AppMetrica Logs API.
 Revenue and in-app purchase data is stored in the event_json field as structured JSON.
 Default fields: event_name, event_datetime, event_json, appmetrica_device_id, app_version_name, os_version, device_model, country_iso_code, city.
-To get subscription/purchase data: filter by event_name (e.g. "subscription_purchase") and parse event_json field.`,
+To get subscription/purchase data: filter by event_name (e.g. "subscription_purchase") and parse event_json field.
+
+Logs API is asynchronous — the first request usually returns "data not ready" and the result must be re-polled (this wrapper waits up to 60s, so a busy or wide query may need a manual retry after a few minutes).
+Start with 1-day windows; multi-day exports take noticeably longer to materialise.
+Run export_events sequentially — 4+ parallel calls hit HTTP 429.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
       date_from: z.string().describe("Start date YYYY-MM-DD"),
@@ -122,7 +126,9 @@ To get subscription/purchase data: filter by event_name (e.g. "subscription_purc
 
   server.tool(
     "export_crashes",
-    "Export raw crash logs from AppMetrica for a given application and time range.",
+    `Export raw crash logs from AppMetrica for a given application and time range.
+Use this for per-crash-name breakdowns — get_report only exposes the total ym:cr:crashes count.
+Same async/rate-limit behaviour as export_events: poll up to ~60s, retry after a few minutes for wide ranges, run sequentially.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
       date_from: z.string().describe("Start date YYYY-MM-DD"),
@@ -160,7 +166,8 @@ To get subscription/purchase data: filter by event_name (e.g. "subscription_purc
 
   server.tool(
     "export_installations",
-    "Export raw installation logs from AppMetrica for a given application and time range.",
+    `Export raw installation logs from AppMetrica for a given application and time range.
+Same async/rate-limit behaviour as export_events: poll up to ~60s, retry after a few minutes for wide ranges, run sequentially.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
       date_from: z.string().describe("Start date YYYY-MM-DD"),
