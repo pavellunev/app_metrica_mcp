@@ -228,6 +228,31 @@ Unknown keys fail with HTTP 4002 (metric) or 4001 (dimension).`,
           "crashRate / affectedUsers — no metric exists, compute manually from raw counts.",
           "Common 4002 traps: ym:u:sessions, ym:u:crashes, ym:u:revenue, ym:u:purchasers, ym:u:retention*, ym:u:pushOpens, ym:u:sessionDuration, ym:u:screenViews, ym:cr:crashRate.",
         ],
+        // Pre-baked recipes for analytics needs that have no direct get_report metric.
+        // These are the workarounds that LLM callers re-derive every session — bake them in
+        // so the next agent doesn't waste cycles on empirical discovery.
+        recipes: {
+          revenue: {
+            problem: "ym:u:revenue / ym:u:purchasers / ARPU are 4002 traps.",
+            solution: "Call export_events with event_name set to your purchase event (e.g. 'subscription_purchase', 'iap_purchase'). Each row's event_json field is a JSON string — parse it and sum the price/revenue field client-side. Field name inside event_json is app-defined — check a sample event first.",
+          },
+          retention: {
+            problem: "No retention metric exists in the Reports API. ym:u:retention1/7/30 are 4002 traps.",
+            solution: "Two export_events calls: cohort day (e.g. install or first session) and return day. Take appmetrica_device_id sets, compute intersection / cohort size. Heavy for D30 — consider AppMetrica UI or a BigQuery dump if you need this regularly.",
+          },
+          crash_rate: {
+            problem: "ym:cr:crashRate / ym:u:crashRate / affectedUsers do not exist.",
+            solution: "One get_report call with metrics=['ym:cr:crashes', 'ym:u:users'] for the period; divide crashes / users client-side. Mixes namespaces but works in practice.",
+          },
+          funnel_conversion: {
+            problem: "No built-in funnel metric.",
+            solution: "Two export_events calls with the request and success event names (e.g. '_requested' / '_success'). Count rows in each, divide. For per-user funnels, dedupe by appmetrica_device_id first.",
+          },
+          push_open_rate: {
+            problem: "Per-user push opens are not exposed via get_report.",
+            solution: "Use ym:pc:openedDevices / ym:pc:sentDevices via get_report for device-level rate, or query AppMetrica UI / Push API directly for the campaign-level breakdown.",
+          },
+        },
         metrics: METRICS,
         dimensions: DIMENSIONS,
       })
