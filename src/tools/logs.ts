@@ -82,9 +82,9 @@ Revenue and in-app purchase data is stored in the event_json field as structured
 Default fields: event_name, event_datetime, event_json, appmetrica_device_id, app_version_name, os_version, device_model, country_iso_code, city.
 To get subscription/purchase data: filter by event_name (e.g. "subscription_purchase") and parse event_json field.
 
-Logs API is asynchronous — the first request usually returns "data not ready" and the result must be re-polled (this wrapper waits up to 60s, so a busy or wide query may need a manual retry after a few minutes).
+Logs API is asynchronous — the first request usually returns "data not ready" (HTTP 202) and the wrapper re-polls the same query (default budget ~150s, tunable via APPMETRICA_MAX_WAIT_MS). A busy or wide query may still need a manual retry after a few minutes; re-running the identical query resumes the same server-side export.
 Start with 1-day windows; multi-day exports take noticeably longer to materialise.
-Run export_events sequentially — 4+ parallel calls hit HTTP 429.`,
+Run export_events strictly sequentially and avoid rapid retries — the Logs API has a low export-request quota; on HTTP 429 the wrapper honours Retry-After and backs off, but exhausting the quota also blocks the AppMetrica web UI for a few minutes.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
       date_from: z.string().describe("Start date YYYY-MM-DD"),
@@ -128,7 +128,7 @@ Run export_events sequentially — 4+ parallel calls hit HTTP 429.`,
     "export_crashes",
     `Export raw crash logs from AppMetrica for a given application and time range.
 Use this for per-crash-name breakdowns — get_report only exposes the total ym:cr:crashes count.
-Same async/rate-limit behaviour as export_events: poll up to ~60s, retry after a few minutes for wide ranges, run sequentially.`,
+Same async/rate-limit behaviour as export_events: the wrapper re-polls 202 (default ~150s budget), honours Retry-After on 429, and backs off. Run sequentially and avoid rapid retries — wide ranges may need a manual retry after a few minutes.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
       date_from: z.string().describe("Start date YYYY-MM-DD"),
@@ -167,7 +167,7 @@ Same async/rate-limit behaviour as export_events: poll up to ~60s, retry after a
   server.tool(
     "export_installations",
     `Export raw installation logs from AppMetrica for a given application and time range.
-Same async/rate-limit behaviour as export_events: poll up to ~60s, retry after a few minutes for wide ranges, run sequentially.`,
+Same async/rate-limit behaviour as export_events: the wrapper re-polls 202 (default ~150s budget), honours Retry-After on 429, and backs off. Run sequentially and avoid rapid retries — wide ranges may need a manual retry after a few minutes.`,
     {
       app_id: z.number().describe("AppMetrica application ID"),
       date_from: z.string().describe("Start date YYYY-MM-DD"),
