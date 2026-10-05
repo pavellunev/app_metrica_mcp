@@ -1,5 +1,6 @@
 # AppMetrica MCP — Yandex App Metrica MCP server for Claude and AI agents
 
+[![AgentHub 已收录：appmetrica-mcp](https://myagenthub.cn/badge/io.github.pavellunev/appmetrica-mcp)](https://myagenthub.cn/p/io.github.pavellunev/appmetrica-mcp)
 [![npm version](https://img.shields.io/npm/v/appmetrica-mcp)](https://www.npmjs.com/package/appmetrica-mcp)
 [![license](https://img.shields.io/npm/l/appmetrica-mcp)](LICENSE)
 
