@@ -88,6 +88,7 @@ Run export_events strictly sequentially and avoid rapid retries — the Logs API
       date_from: z.string().describe("Start date YYYY-MM-DD"),
       date_to: z.string().describe("End date YYYY-MM-DD"),
       event_name: z.string().optional().describe("Filter by specific event name (e.g. subscription_purchase)"),
+      profile_id: z.string().min(1).optional().describe("Exact user profile ID (server-side equality filter)"),
       fields: z.string().optional().describe(
         "Comma-separated fields to return. Defaults: event_name,event_datetime,event_json,appmetrica_device_id,app_version_name,os_version,device_model,country_iso_code,city"
       ),
@@ -95,11 +96,12 @@ Run export_events strictly sequentially and avoid rapid retries — the Logs API
     },
     async (args) => {
       try {
-        const { app_id, date_from, date_to, event_name, fields, limit } = args as {
+        const { app_id, date_from, date_to, event_name, profile_id, fields, limit } = args as {
           app_id: number;
           date_from: string;
           date_to: string;
           event_name?: string;
+          profile_id?: string;
           fields?: string;
           limit: number;
         };
@@ -113,6 +115,7 @@ Run export_events strictly sequentially and avoid rapid retries — the Logs API
         };
 
         if (event_name) params.event_name = event_name;
+        if (profile_id !== undefined) params.profile_id = profile_id;
 
         const rows = await exportLogs(client, "events", params);
         return ok({ count: rows.length, events: rows });

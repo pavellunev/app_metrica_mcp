@@ -197,10 +197,14 @@ Unofficial tools that drive the AppMetrica web UI's internal API through a logge
 
 | Tool | Description |
 |---|---|
-| `export_events` | Export raw custom event logs |
+| `export_events` | Export raw custom event logs; optional exact `profile_id` and `event_name` filters |
 | `export_crashes` | Export raw crash logs |
 | `export_installations` | Export raw installation logs |
 | `export_logs` | Export any Logs API table (13 tables), with field validation; `push_tokens` needs no dates |
+
+To export events for a particular user, pass `profile_id` as a string, optionally alongside `event_name`. The filter is applied by AppMetrica before the result limit; it does not require exporting all users. Include `profile_id` in `fields` if you want it in the response. See the [Events Logs API reference](https://appmetrica.yandex.com/docs/en/mobile-api/logs/ref/events).
+
+Run the profile filter regression tests with `npm run build && node --test test/logs-profile-id.test.mjs`.
 
 ### Push Notifications
 
